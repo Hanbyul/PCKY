@@ -1,6 +1,8 @@
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
+ *
+ * John Gilmer
  */
 package hw2;
 
@@ -20,12 +22,11 @@ import java.util.Set;
  *
  * @author jgilme1
  */
-public class PCKY {
+public class PCKYNoMods {
     
     private static Map<String,Double> bGrammar = new HashMap<String,Double>();
     private static Map<String,Double> lGrammar = new HashMap<String,Double>();
     private static Set<String> nonTerminals = new HashSet<String>();
-    private static Set<String> terminals = new HashSet<String>();
     private static Map<String,Integer> ntToInt = new HashMap<String,Integer>();
     private static Map<Integer,String> ntToString = new HashMap<Integer,String>();
     private static List<String> parses = new ArrayList<String>();
@@ -56,9 +57,6 @@ public class PCKY {
                
                 for(int i=1; i< items.length -1; i++){
                     production = production + " " + items[i];
-                }
-                if(!items[2].equals("UNK")){
-                  terminals.add(items[2]);
                 }
 //                System.out.println(production);
                 lGrammar.put(production, prob);
@@ -119,18 +117,11 @@ public class PCKY {
         //table
         double[][][] table = new double[words.length+1][words.length+1][nonTerminals.size()];
         int[][][][] backTrace = new int[words.length+1][words.length+1][nonTerminals.size()][3];
-        String terminalWord;
+
         
         for(int j = 1; j < (words.length+1) ; j++){
-            if(!terminals.contains(words[j-1])){
-                
-                terminalWord = "UNK";
-            }
-            else{
-                terminalWord = words[j-1];
-            }
             for(String prod : lGrammar.keySet()){
-                if(prod.split("\\s+")[2].equals(terminalWord)){
+                if(prod.split("\\s+")[2].equals(words[j-1])){
                     table[j-1][j][nonTerminalToInt(prod.split("\\s+")[0])] = lGrammar.get(prod);
                 }
             }
