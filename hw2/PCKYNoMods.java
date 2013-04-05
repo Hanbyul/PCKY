@@ -19,27 +19,53 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- *
- * @author jgilme1
+ * PCKYNoMods is an application that reads a probabilistic grammar and uses
+ * it to parse a set of sentences with the PCKY algorithm.
  */
 public class PCKYNoMods {
     
+    //hashmap for binary productions and their probabilities
     private static Map<String,Double> bGrammar = new HashMap<String,Double>();
+    
+    //hashmap for lexical productions and their probabilities
     private static Map<String,Double> lGrammar = new HashMap<String,Double>();
+    
+    //set of all the non-terminals in the grammar
     private static Set<String> nonTerminals = new HashSet<String>();
+    
+    //optimization hashmap from string of non-terminal to integer representation
     private static Map<String,Integer> ntToInt = new HashMap<String,Integer>();
+    
+    //optimization hashmap from integer representation of non-terminal to string representation
     private static Map<Integer,String> ntToString = new HashMap<Integer,String>();
+    
+    //list of the parses returned for the input sentences
     private static List<String> parses = new ArrayList<String>();
     
+    
+    /**
+     * main takes filePaths to the probabilistic grammar file and to the file for the
+     * input sentences
+     **/
     public static void main(String args[]) throws FileNotFoundException, IOException, Exception{
         
         
-        
+        ///read probabilistic grammar file
         readData(args[0]);
+        
+        //initialize optimization non-terminal maps
         initializeNTMaps();
+        
+        //parse the senstences in the file at args[1]
         parseSentences(args[1]);
     }
 
+    /**
+     * readData reads a probabilistic grammar file and stores each production with its
+     * probability in a hashmap for the binary productions and a hashmap for the lexical productions.
+     * As it parses the file it also builds the set of non-terminals
+     * @param filename String for file path to the probabilistic grammar file
+    **/
     private static void readData(String filename) throws FileNotFoundException,IOException, Exception {
         BufferedReader in = new BufferedReader(new FileReader(filename));
         
@@ -48,32 +74,44 @@ public class PCKYNoMods {
         String[] items;
         String production;
         Double prob;
+        
+        //parse grammar file
         while(next !=null){
             items = next.split("\\s+");
+            
+            //get probability of grammar production
             prob = Double.parseDouble(items[items.length-1]);
+            
+            //get grammar production
             production = items[0];
-            // lexical production
+            
+            
+            // if it is a lexical production
             if(items.length == 4){
                
+                //build string representation of lexical grammar production
                 for(int i=1; i< items.length -1; i++){
                     production = production + " " + items[i];
                 }
-//                System.out.println(production);
+                //put production in the lexical grammar hashmap
                 lGrammar.put(production, prob);
             }
             
-            //binary production
+            //if it is a binary production
             else if(items.length ==5){
                 
+                //build string representation of binary grammar production
                for(int i=1; i< items.length -1; i++){
                     production = production + " " + items[i];
                 }
+                //put production in the binary grammar hashmap
                 bGrammar.put(production, prob);
             }
             else{
                 throw new Exception("Input Error");
             }
             
+            //keep track of non-terminal ins the grammar
             if(!nonTerminals.contains(items[0])){
                 nonTerminals.add(items[0]);
             }
@@ -82,11 +120,19 @@ public class PCKYNoMods {
         in.close();
     }
 
+
+    /**
+     * parseSentences reads sentences from a file and sends them to the method
+     * parse which parses a sentence and stores in a list of parses. Finally this method
+     * prints all of those parses stored in the list
+     **/
     private static void parseSentences(String filename) throws FileNotFoundException, IOException {
          BufferedReader in = new BufferedReader(new FileReader(filename));  
          
+         //read sentences from file
          String next = in.readLine();
          while(next != null){
+           //parse sentence
            parse(next);
              
            next = in.readLine();    
@@ -102,8 +148,14 @@ public class PCKYNoMods {
     }
     
     
+    /**
+     * PCKY algorithm implementation
+     * */
     private static void parse(String s){
+        //split words in the sentence
         String[] words = s.split("\\s+");
+        
+        //initialize variables
         Double probNT1 =0.0;
         Double probNT2 =0.0;
         Double nextProb =0.0;
@@ -114,17 +166,20 @@ public class PCKYNoMods {
         Integer NT2;
         StringBuilder parseString = new StringBuilder();
         
-        //table
+        //table stores probabilties of productions from [i][j][NT]
         double[][][] table = new double[words.length+1][words.length+1][nonTerminals.size()];
+        //backtrace 4-d array stores 
         int[][][][] backTrace = new int[words.length+1][words.length+1][nonTerminals.size()][3];
 
         
         for(int j = 1; j < (words.length+1) ; j++){
+            //store all lexical production probabilties in table for word at j
             for(String prod : lGrammar.keySet()){
                 if(prod.split("\\s+")[2].equals(words[j-1])){
                     table[j-1][j][nonTerminalToInt(prod.split("\\s+")[0])] = lGrammar.get(prod);
                 }
             }
+            
             for(int i = (j-2); i > -1; i --){
                 for(int k = (i+1); k < j; k++){
                     for(String prod : bGrammar.keySet()){
@@ -173,6 +228,10 @@ public class PCKYNoMods {
         return ntToInt.get(key);
     }
 
+    /**
+     * for each of the non-terminals it creates an integer representation 
+     * and stores it in both optimization hashmaps
+     **/
     private static void initializeNTMaps() {
         Integer key;
         for(String nt : nonTerminals){
