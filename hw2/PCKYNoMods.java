@@ -168,7 +168,7 @@ public class PCKYNoMods {
         
         //table stores probabilties of productions from [i][j][NT]
         double[][][] table = new double[words.length+1][words.length+1][nonTerminals.size()];
-        //backtrace 4-d array stores 
+        //backtrace 4-d array stores backtraces for given NTs spanning a given range in the sentence
         int[][][][] backTrace = new int[words.length+1][words.length+1][nonTerminals.size()][3];
 
         
@@ -191,9 +191,9 @@ public class PCKYNoMods {
                             (probNT2 > 0.0) ){
                             nextProb = probNT1 * probNT2 * bGrammar.get(prod);
                             NT0 = nonTerminalToInt(prod.split("\\s")[0]);
-                            //System.out.println(nextProb);
                             if( table[i][j][NT0]  < nextProb){
-                                //System.out.println(i +" " + j + " " + prod.split("\\s")[0]);
+                                //store most probable production to this cell in table
+                                //store back trace in backtrace
                                 table[i][j][NT0] = nextProb;
                                 backTrace[i][j][NT0][0] = k;
                                 backTrace[i][j][NT0][1] = NT1;
@@ -203,23 +203,24 @@ public class PCKYNoMods {
                     }
                 }
             }
-            
-            //return buildTree
-            
         }
         
         //return BuildTree
+        
         int[] backTraceValues = new int[3];
         int[] emptyList = {0,0,0};
+        //get backtrace values spanning the whole sentence
         backTraceValues = backTrace[0][words.length][nonTerminalToInt(rootNode)];
         if(!Arrays.equals(backTraceValues, emptyList)){
           parseString.append("(").append(rootNode).append(" ");
+          //call buildTree method
           buildTree(0,words.length,backTraceValues[0],backTraceValues[1],backTraceValues[2],parseString,backTrace,words);
           parseString.append(")");
         }
         else{
           parseString.append(" ");
         }
+        //store parseString in list of parses
         parses.add(parseString.toString());
     }
 
@@ -243,6 +244,9 @@ public class PCKYNoMods {
         }
     }
 
+    /**
+     * Reconstructs the parse by looking through the backtrace table
+     * */
     private static void buildTree(int i, int j, Integer k, Integer B, Integer C,StringBuilder parseString,
             int[][][][] backTrace, String[] input) {
         
@@ -250,7 +254,7 @@ public class PCKYNoMods {
           int[] backC = backTrace[k][j][C];
           int[] empty = {0,0,0};
           
-        //first handle B
+          //first handle B 
           parseString.append("(").append(ntToString.get(B)).append( " ");
           if( !Arrays.equals(backB,empty)){
               buildTree(i,k,backB[0],backB[1],backB[2],parseString,backTrace,input);
